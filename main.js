@@ -3,7 +3,7 @@ const N = 8, EMPTY = 0, BLACK = 1, WHITE = 2;
 let board = [], currentPlayer, humanColor = BLACK;
 let qTable = {}, epsilon = 0.2, alpha = 0.1, gamma = 0.9;
 let trainingMode = false, gameHistory = [];
-let dashboard = { total: 0, wins: 0 };
+let dashboard = { total: 0, wins: 0, aiGames: 0 };
 
 // 初期化：localStorage からの読み込み
 function initQTable() {
@@ -12,8 +12,17 @@ function initQTable() {
 }
 function initDashboard() {
   const raw = localStorage.getItem('othelloDash');
-  if (raw) dashboard = JSON.parse(raw);
+  if (raw) {
+    const obj = JSON.parse(raw);
+    dashboard.total = obj.total || 0;
+    dashboard.wins  = obj.wins  || 0;
+    dashboard.aiGames = obj.aiGames || 0;
+  }
   updateDashboard();
+}
+function initAIName() {
+  const aiName = localStorage.getItem('othelloAIName');
+  if (aiName) document.getElementById('aiName').value = aiName;
 }
 
 // 保存
@@ -31,11 +40,16 @@ function updateDashboard() {
     ? (dashboard.wins / dashboard.total * 100).toFixed(1)
     : 0;
   document.getElementById('winRate').textContent = rate + '%';
+  document.getElementById('aiGamesCount').textContent = dashboard.aiGames;
+}
+
+// AI名前保存
+function saveAIName(name) {
+  localStorage.setItem('othelloAIName', name);
 }
 
 // ゲームリセット
 function resetGame() {
-  // 盤面初期配置
   board = Array(N*N).fill(EMPTY);
   board[3*8+3] = WHITE;  board[3*8+4] = BLACK;
   board[4*8+3] = BLACK;  board[4*8+4] = WHITE;
@@ -43,7 +57,6 @@ function resetGame() {
   gameHistory = [];
   drawBoard();
   updateInfo();
-  // AI先手ならすぐ動かす
   if (trainingMode && currentPlayer !== humanColor) {
     aiMove();
   }
@@ -59,7 +72,6 @@ function drawBoard() {
     cell.dataset.idx = i;
     if (board[i] === BLACK) cell.classList.add('black');
     else if (board[i] === WHITE) cell.classList.add('white');
-    // 合法手ハイライト
     if (legalMoves(board, currentPlayer).includes(i)) {
       cell.classList.add('highlight');
     }
@@ -76,22 +88,18 @@ function onCellClick(idx) {
 // 石を置く／反転
 function makeMove(idx) {
   const flips = getFlips(board, idx, currentPlayer);
-  if (!flips.length) return;  // 非合法手は無視
-  // サウンド
+  if (!flips.length) return;
   document.getElementById('placeSound').play();
-  // 履歴記録
   gameHistory.push({
     state: board.join(''),
     action: idx,
     player: currentPlayer
   });
-  // 反転
   flips.forEach(i => board[i] = currentPlayer);
   board[idx] = currentPlayer;
   currentPlayer = 3 - currentPlayer;
   drawBoard();
   updateInfo();
-  // 終了判定 or AIターン
   if (isGameOver()) endGame();
   else if (trainingMode || currentPlayer !== humanColor) aiMove();
 }
@@ -102,8 +110,7 @@ function aiMove() {
   const moves = legalMoves(board, currentPlayer);
   if (!moves.length) {
     currentPlayer = 3 - currentPlayer;
-    drawBoard();
-    updateInfo();
+    drawBoard(); updateInfo();
     if (isGameOver()) endGame();
     else aiMove();
     return;
@@ -131,22 +138,27 @@ function isGameOver() {
   return !legalMoves(board, BLACK).length && !legalMoves(board, WHITE).length;
 }
 
-// 終局処理：結果表示＋Q学習更新＋ダッシュボード更新
+// 終局処理
 function endGame() {
   const cnt = [0,0,0];
   board.forEach(c => cnt[c]++);
   const winner = cnt[BLACK] > cnt[WHITE]
     ? BLACK : cnt[WHITE] > cnt[BLACK] ? WHITE : 0;
+  const aiName = document.getElementById('aiName').value || 'AI';
   const status = document.getElementById('status');
+
   if (winner === 0) status.textContent = '引き分け';
   else if (winner === humanColor) status.textContent = 'あなたの勝ち！';
-  else status.textContent = 'AIの勝ち';
+  else status.textContent = `${aiName}の勝ち`;
 
   // ダッシュボード更新
   dashboard.total++;
   if (winner === humanColor) dashboard.wins++;
+  if (trainingMode) {
+    dashboard.aiGames++;
+    saveDashboard();
+  }
   updateDashboard();
-  saveDashboard();
 
   // Q学習更新
   if (trainingMode) updateQValues(winner);
@@ -155,7 +167,6 @@ function endGame() {
 
 // Q学習の更新
 function updateQValues(winner) {
-  // 人間勝利 → AI視点の報酬は −1
   const reward = winner === humanColor ? -1
                : winner === 0          ?  0
                :                           1;
@@ -186,16 +197,14 @@ function legalMoves(bd, color) {
 // 反転対象セル取得
 function getFlips(bd, idx, color) {
   if (bd[idx] !== EMPTY) return [];
-  const opp = 3 - color;
-  const res = [];
-  const dirs = [-1, -8, -7, -9, 1, 8, 7, 9];
+  const opp = 3 - color, res = [];
+  const dirs = [-1,-8,-7,-9,1,8,7,9];
   dirs.forEach(d => {
     const line = [];
     let i = idx + d;
     while (
       i >= 0 && i < bd.length &&
       bd[i] === opp &&
-      // 横溢れチェック
       ((d === 1 || d === -1)
         ? Math.floor(i/8) === Math.floor((i-d)/8)
         : true)
@@ -207,7 +216,6 @@ function getFlips(bd, idx, color) {
       res.push(...line);
     }
   });
-  // 反転時サウンド
   if (res.length) document.getElementById('flipSound').play();
   return res;
 }
@@ -233,8 +241,22 @@ document.getElementById('trainBtn')
     humanColor = BLACK;
     resetGame();
   });
+document.getElementById('resetAIBtn')
+  .addEventListener('click', () => {
+    if (confirm('AIの学習データをリセットしますか？')) {
+      qTable = {};
+      dashboard.aiGames = 0;
+      saveQTable();
+      saveDashboard();
+      updateDashboard();
+      alert('AIをリセットしました。');
+    }
+  });
+document.getElementById('aiName')
+  .addEventListener('change', e => saveAIName(e.target.value));
 
 // 初期化実行
 initQTable();
 initDashboard();
+initAIName();
 resetGame();

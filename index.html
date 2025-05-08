@@ -13,8 +13,12 @@
     <label>あなたの名前：
       <input id="playerName" type="text" value="あなた">
     </label>
+    <label>AIの名前：
+      <input id="aiName" type="text" value="AI">
+    </label>
     <button id="startBtn">ゲーム開始</button>
     <button id="trainBtn">学習モード開始</button>
+    <button id="resetAIBtn">AIリセット</button>
   </div>
 
   <div id="board"></div>
@@ -28,6 +32,7 @@
     <h2>ダッシュボード</h2>
     <p>総対戦数: <span id="totalGames">0</span></p>
     <p>勝率: <span id="winRate">0%</span></p>
+    <p>AI学習対局数: <span id="aiGamesCount">0</span></p>
   </div>
 
   <audio id="placeSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>

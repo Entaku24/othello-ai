@@ -7,6 +7,12 @@ body {
 #controls {
   margin-bottom: 10px;
 }
+#controls label {
+  margin: 0 8px;
+}
+#controls button {
+  margin: 0 4px;
+}
 #board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -17,6 +23,7 @@ body {
 .cell {
   border: 1px solid #333;
   position: relative;
+  background: #0a5;
 }
 .cell.highlight { background: #cfc; cursor: pointer; }
 .cell.black::after,
@@ -26,9 +33,13 @@ body {
   top: 10%; left: 10%;
   width: 80%; height: 80%;
   border-radius: 50%;
+  box-sizing: border-box;
 }
 .cell.black::after { background: #000; }
-.cell.white::after { background: #fff; }
+.cell.white::after {
+  background: #fff;
+  border: 2px solid #000;
+}
 
 #info, #dashboard {
   margin-top: 10px;
