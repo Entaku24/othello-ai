@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>オセロ with Q学習AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>オセロ - AI育成モード</h1>
+
+  <div id="controls">
+    <label>あなたの名前：
+      <input id="playerName" type="text" value="あなた">
+    </label>
+    <button id="startBtn">ゲーム開始</button>
+    <button id="trainBtn">学習モード開始</button>
+  </div>
+
+  <div id="board"></div>
+
+  <div id="info">
+    <p id="score">黒:0 白:0</p>
+    <p id="status"></p>
+  </div>
+
+  <div id="dashboard">
+    <h2>ダッシュボード</h2>
+    <p>総対戦数: <span id="totalGames">0</span></p>
+    <p>勝率: <span id="winRate">0%</span></p>
+  </div>
+
+  <audio id="placeSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+  <audio id="flipSound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg"></audio>
+
+  <script src="main.js"></script>
+</body>
+</html>
