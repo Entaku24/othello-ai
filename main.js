@@ -14,8 +14,8 @@ function initDashboard() {
   const raw = localStorage.getItem('othelloDash');
   if (raw) {
     const obj = JSON.parse(raw);
-    dashboard.total = obj.total || 0;
-    dashboard.wins  = obj.wins  || 0;
+    dashboard.total   = obj.total   || 0;
+    dashboard.wins    = obj.wins    || 0;
     dashboard.aiGames = obj.aiGames || 0;
   }
   updateDashboard();
